@@ -11,7 +11,7 @@
       "nav productos publicidad"
       "nav servicios publicidad"
       "footer footer footer";
-    grid-template-rows: 140px auto auto auto; 
+    grid-template-rows: 150px auto auto auto; 
     grid-template-columns: 1fr 10fr 1fr;
  }
  
@@ -23,8 +23,6 @@
     grid-area: header;
     display: flex;
     background-image: url(../assets/images/ai-generated-rustic-table-showcases-array-of-potted-succulents-and-cacti-in-soft-natural-light-free-photo.jpg);
-    flex-direction: row;
-    align-items: flex-end;
  }
  footer {
     grid-area: footer;
