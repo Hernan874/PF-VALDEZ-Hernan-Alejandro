@@ -86,10 +86,10 @@ console.log(Math.min(arrayproductos));*/
 
 
 class Producto2{
-    constructor(nombre, descripcion, precio,) {
+    constructor(nombre, precio) {
         this.nombre = nombre;
-        this.categoria   = descripcion;
-        this.precio  = precio;
+        this.precio = precio;
+        this.imagenSrc  = this.imagenSrc;
         
     }
 }
@@ -97,24 +97,57 @@ class Producto2{
 const botones = document.querySelectorAll('.btn-com');
 
 let carrito = [];
-let carritoEnLS = JSON.parse(localStorage.getItem('carrito-com'))
+let carritoEnLS = JSON.parse(localStorage.getItem('carrito-com')) || [];
 
-if (carritoEnLS) {
-    carrito=carritoEnLS
-    alert('tenes articulos en el carrito para comprar')
+
+if (carritoEnLS.length !== 0) {
+    //alert('tenes articulos en el carrito para comprar')
+    Swal.fire({
+        title: 'Recordatorio',
+        text: 'Tienes articulos pendientes en el carrito para comprar',
+        icon: 'info',
+        confirmButtonText: 'Okey'
+    });
+    restaurarCarrito();
+      
 }
 
-function manejarClick(event) {
+let productos = [];
 
+// Cargar los productos desde el JSON
+fetch('../JSON/productos.json')
+  .then(response => response.json())
+  .then(data => {
+    productos = data; // Guardar los productos en la variable
+  })
+  .catch(error => console.error('Error al cargar el archivo JSON:', error));
+
+/*function manejarClick(event) {
+    console.log("Se ha hecho clic en el botón de Comprar");
   const boton = event.target;
 
   const card = boton.closest('.card-body');
 
   const nombre = card.querySelector('.card-title').textContent;
-  const descripcion = card.querySelector('.card-text').textContent;
   const precio = parseFloat(card.querySelector('.precio-text').textContent);
+  const imagenSrc = card.querySelector('.card-img-top').src; 
 
-  const producto = new Producto2(nombre, descripcion, precio);
+  const producto = new Producto2(nombre, precio, imagenSrc);
+
+  // Verificar si el producto ya está en el carrito
+  const productoExistente = carrito.find(item => item.nombre === nombre);
+
+  if (productoExistente) {
+    // Si el producto ya existe, mostrar alerta y salir de la función
+    Swal.fire({
+      title: 'Producto ya en el carrito',
+      text: 'El producto ya está en tu carrito',
+      icon: 'warning',
+      confirmButtonText: 'Okey'
+    });
+    return; // Salir de la función sin agregar el producto
+  }
+
 
   carrito.push(producto);
 
@@ -127,7 +160,7 @@ function manejarClick(event) {
 botones.forEach(boton => {
   boton.addEventListener('click', manejarClick);
 });
- 
+*/
 
 //carrito
 
@@ -144,6 +177,13 @@ document.addEventListener('DOMContentLoaded', (event) => {
     var div = document.getElementById('cart');
     div.style.display = 'none'; // Ocultar el div inicialmente
 });
+
+function restaurarCarrito() {
+    carritoEnLS.forEach(producto => {
+      agregarItemAlCarrito(producto.nombre, producto.precio, producto.imagen);
+    });
+}
+  
 
 function ready(){
     
@@ -189,7 +229,6 @@ function eliminarItemCarrito(event){
 
     //la siguiente funciòn controla si hay elementos en el carrito
     //Si no hay elimino el carrito
-
     
     ocultarCarrito();
 }
@@ -257,10 +296,30 @@ function sumarCantidad(event){
     var buttonClicked = event.target;
     var selector = buttonClicked.parentElement;
     console.log(selector.getElementsByClassName('carrito-item-cantidad')[0].value);
-    var cantidadActual = selector.getElementsByClassName('carrito-item-cantidad')[0].value;
-    cantidadActual++;
+    const cantidadInput = selector.getElementsByClassName('carrito-item-cantidad')[0];
+    let cantidadActual = parseInt(cantidadInput.value);
+
+    const titulo = selector.parentElement.getElementsByClassName('carrito-item-titulo')[0].innerText;
+    const productoEncontrado = productos.find(producto => producto.nombre.toLowerCase() === titulo.toLowerCase());
+    console.log(titulo);
+    console.log(productoEncontrado);
+    if (productoEncontrado && cantidadActual < productoEncontrado.stock) {
+        cantidadActual++;
+        cantidadInput.value = cantidadActual;
+        actualizarTotalCarrito();
+    } else if (productoEncontrado) {
+        Swal.fire({
+            title: 'Stock insuficiente',
+            text: `Solo hay ${productoEncontrado.stock} unidades de ${titulo} disponibles.`,
+            icon: 'warning',
+            confirmButtonText: 'Ok'
+        });
+    }
+    
+
+    /*cantidadActual++;
     selector.getElementsByClassName('carrito-item-cantidad')[0].value = cantidadActual;
-    actualizarTotalCarrito();
+    actualizarTotalCarrito();*/
 }
 //Resto en uno la cantidad del elemento seleccionado
 function restarCantidad(event){
@@ -283,9 +342,12 @@ function agregarAlCarritoClicked(event){
     var precio = card.getElementsByClassName('precio-text')[0].innerText;
     var imagenSrc = card.getElementsByClassName('card-img-top')[0].src;
     console.log(imagenSrc);
+    const producto = new Producto2(titulo, precio,imagenSrc);
+    
+    carrito.push(producto);
+    localStorage.setItem('carrito-com', JSON.stringify(carrito));
 
     agregarItemAlCarrito(titulo, precio, imagenSrc);
-
     mostrarCarritoDiv();
     hacerVisibleCarrito();
 
@@ -306,10 +368,18 @@ function agregarItemAlCarrito(titulo, precio, imagenSrc){
         var nuevoTitulo = titulo.trim().toLowerCase();
         
         if (tituloEnCarrito === nuevoTitulo) {
-            alert("El item ya se encuentra en el carrito");
+            //alert("El item ya se encuentra en el carrito");
+            Swal.fire({
+                title: 'Espera',
+                text: 'El item ya se encuentra en el carrito',
+                icon: 'warning',
+                confirmButtonText: 'Okey'
+              });
             return;
         }
     }
+
+    
 
     var itemCarritoContenido = `
         <div class="carrito-item">
@@ -357,7 +427,14 @@ function mostrarCarritoDiv() {
 }
 
 function pagarClicked(){
-    alert("Gracias por la compra");
+    //alert("Gracias por la compra");
+    Swal.fire({
+        title: '¡Compra realizada con éxito!',
+        text: 'Muchas Gracias!',
+        icon: 'success',
+        confirmButtonText: 'Ok'
+      });
+
     //Elimino todos los elmentos del carrito
     var carritoItems = document.getElementsByClassName('carrito-items')[0];
     while (carritoItems.hasChildNodes()){
@@ -365,4 +442,6 @@ function pagarClicked(){
     }
     actualizarTotalCarrito();
     ocultarCarrito();
+    carrito = [];
+    localStorage.setItem('carrito-com', JSON.stringify(carrito));
 }
